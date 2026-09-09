@@ -359,3 +359,6 @@ The conversion logic in `app/tools/tasks.py` is adapted from a set of
 standalone Tkinter desktop scripts (video/audio downloading, speech-to-
 text, frame extraction, PDF-to-Word, images-to-video, QR generation,
 text-to-speech) into Flask-friendly, per-user background jobs.
+
+## Connect us
+# Email: chheangsamnang.wu@gmail.com

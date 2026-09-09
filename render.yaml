@@ -1,0 +1,51 @@
+services:
+  - type: web
+    name: snpro-web
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn run:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        value: sqlite:///instance/app.db
+      - key: CELERY_BROKER_URL
+        fromService:
+          name: snpro-redis
+          type: redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          name: snpro-redis
+          type: redis
+          property: connectionString
+      - key: STORAGE_ROOT
+        value: /var/data/storage
+
+  - type: worker
+    name: snpro-worker
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A celery_worker.celery worker --loglevel=info -P solo -Q celery,heavy
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        value: sqlite:///instance/app.db
+      - key: CELERY_BROKER_URL
+        fromService:
+          name: snpro-redis
+          type: redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          name: snpro-redis
+          type: redis
+          property: connectionString
+      - key: STORAGE_ROOT
+        value: /var/data/storage
+
+  - type: redis
+    name: snpro-redis
+    ipAllowList: []
+    plan: free
