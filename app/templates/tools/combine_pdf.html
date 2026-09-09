@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% block title %}Combine to PDF · SNPro{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+  <div class="d-flex align-items-center gap-3 mb-4" data-aos="fade-up">
+    <div class="tool-icon-badge">
+      <i class="bi bi-file-pdf"></i>
+    </div>
+    <div>
+      <h1 class="h3 mb-1">Combine to PDF</h1>
+      <p class="text-secondary mb-0">Merge images, videos, text files, and existing PDFs into one clean, ordered PDF document.</p>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- ===== MAIN FORM ===== -->
+    <div class="col-lg-8">
+      <div class="card shadow-sm border-0" data-aos="fade-up" data-aos-delay="50">
+        <div class="card-body p-4">
+          <form id="combine-pdf-form" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <!-- Drag & drop zone -->
+            <div id="combine-dropzone" class="upload-dropzone mb-2">
+              <i class="bi bi-cloud-arrow-up fs-1 text-primary"></i>
+              <p class="mb-1 mt-2">Drag &amp; drop files here, or <span class="link-primary text-decoration-underline">browse</span></p>
+              <small class="text-secondary">
+                Images (.png .jpg .jpeg .webp .bmp .gif) &middot;
+                Videos (.mp4 .mov .avi .mkv) &middot;
+                Text (.txt .md .csv .json) &middot; PDFs (.pdf)
+              </small>
+              <input type="file" id="file-input" name="files" class="d-none" multiple
+                     accept=".png,.jpg,.jpeg,.webp,.bmp,.gif,.mp4,.mov,.avi,.mkv,.txt,.md,.csv,.json,.pdf">
+            </div>
+
+            <!-- File list with reorder handles -->
+            <ul id="file-list" class="file-list mt-3 list-unstyled"></ul>
+            <input type="hidden" name="file_order" id="file-order-input">
+
+            <!-- Options (collapsible) -->
+            <div class="mt-4">
+              <button class="btn btn-link p-0 mb-2 text-decoration-none" type="button" data-bs-toggle="collapse" data-bs-target="#combine-options">
+                <i class="bi bi-sliders me-1"></i> Options
+              </button>
+              <div class="collapse show" id="combine-options">
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">Page size</label>
+                    <select name="page_size" class="form-select">
+                      <option value="A4" selected>A4</option>
+                      <option value="Letter">Letter</option>
+                      <option value="Legal">Legal</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">Orientation</label>
+                    <div class="d-flex gap-3 pt-2">
+                      <div class="form-check">
+                        <input class="form-check-input" type="radio" name="orientation" value="portrait" id="orient-portrait" checked>
+                        <label class="form-check-label" for="orient-portrait">Portrait</label>
+                      </div>
+                      <div class="form-check">
+                        <input class="form-check-input" type="radio" name="orientation" value="landscape" id="orient-landscape">
+                        <label class="form-check-label" for="orient-landscape">Landscape</label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-4 d-flex align-items-end">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" name="page_numbers" id="page-numbers" checked>
+                      <label class="form-check-label" for="page-numbers">Add page numbers</label>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Header text (optional)</label>
+                    <input type="text" name="header_text" class="form-control" placeholder="e.g. Project Report">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Footer text (optional)</label>
+                    <input type="text" name="footer_text" class="form-control" placeholder="e.g. Confidential">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-accent w-100 mt-4" id="combine-submit-btn" disabled>
+              <i class="bi bi-layers me-2"></i>Combine to PDF
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SIDEBAR ===== -->
+    <div class="col-lg-4">
+      <div class="card border-0 bg-body-tertiary" data-aos="fade-up" data-aos-delay="100">
+        <div class="card-body p-4">
+          <h2 class="h6 mb-3">How it works</h2>
+          <ol class="ps-3 mb-0 small text-secondary">
+            <li class="mb-2">Upload your files – images, videos, text, or PDFs.</li>
+            <li class="mb-2">Reorder them using the ↑ / ↓ handles (this is the order they'll appear in the PDF).</li>
+            <li class="mb-2">Choose page size, orientation, and optional header/footer.</li>
+            <li>Click <strong>Combine to PDF</strong> and download your document once it's ready.</li>
+          </ol>
+        </div>
+      </div>
+      <div class="card border-0 bg-body-tertiary mt-3" data-aos="fade-up" data-aos-delay="150">
+        <div class="card-body p-4">
+          <h2 class="h6 mb-2">📄 What's supported</h2>
+          <p class="small text-secondary mb-0">
+            <strong>Images</strong> – PNG, JPG, JPEG, WEBP, BMP, GIF<br>
+            <strong>Videos</strong> – MP4, MOV, AVI, MKV (thumbnail extracted)<br>
+            <strong>Text</strong> – TXT, MD, CSV, JSON (rendered as text)<br>
+            <strong>PDFs</strong> – merged directly
+          </p>
+          <hr class="my-2">
+          <p class="small text-secondary mb-0">
+            <i class="bi bi-info-circle me-1"></i> Large jobs run in the background – you'll be redirected to a progress page.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .tool-icon-badge {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bs-primary-bg-subtle, rgba(13,110,253,.12));
+    color: var(--bs-primary);
+    font-size: 1.4rem;
+  }
+  .upload-dropzone {
+    border: 2px dashed var(--bs-border-color);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color .15s ease, background-color .15s ease;
+    padding: 2rem 1.25rem;
+    text-align: center;
+  }
+  .upload-dropzone.dragover {
+    border-color: var(--bs-primary);
+    background-color: var(--bs-primary-bg-subtle, rgba(13,110,253,.06));
+  }
+  .upload-dropzone input[type="file"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    overflow: hidden;
+  }
+  .file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .file-list-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--surface-2);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  .file-list-item .file-name {
+    flex: 1;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .file-list-item .file-size {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+  .file-list-item .file-actions {
+    display: flex;
+    gap: 0.2rem;
+    align-items: center;
+  }
+  .file-list-item .file-actions button {
+    padding: 0 0.3rem;
+    font-size: 1rem;
+    line-height: 1;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    transition: color 0.15s;
+  }
+  .file-list-item .file-actions button:hover {
+    color: var(--text);
+  }
+  .file-list-item .file-actions .text-danger:hover {
+    color: var(--danger) !important;
+  }
+  .file-list-item .file-actions button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ super() }}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const dropzone = document.getElementById("combine-dropzone");
+  const fileInput = document.getElementById("file-input");
+  const fileListEl = document.getElementById("file-list");
+  const orderInput = document.getElementById("file-order-input");
+  const submitBtn = document.getElementById("combine-submit-btn");
+
+  let orderedFiles = [];
+
+  function iconFor(name) {
+    const ext = name.split(".").pop().toLowerCase();
+    if (["png", "jpg", "jpeg", "webp", "bmp", "gif"].includes(ext)) return "bi-image";
+    if (["mp4", "mov", "avi", "mkv"].includes(ext)) return "bi-file-play";
+    if (["txt", "md", "csv", "json"].includes(ext)) return "bi-file-text";
+    if (ext === "pdf") return "bi-file-pdf";
+    return "bi-file";
+  }
+
+  function renderList() {
+    fileListEl.innerHTML = "";
+    orderedFiles.forEach((file, idx) => {
+      const li = document.createElement("li");
+      li.className = "file-list-item";
+      li.dataset.index = idx;
+      li.innerHTML = `
+        <i class="bi ${iconFor(file.name)}"></i>
+        <span class="file-name">${file.name}</span>
+        <span class="file-size">${(file.size / 1024).toFixed(1)} KB</span>
+        <span class="file-actions">
+          <button type="button" class="move-up" ${idx === 0 ? "disabled" : ""} title="Move up"><i class="bi bi-chevron-up"></i></button>
+          <button type="button" class="move-down" ${idx === orderedFiles.length - 1 ? "disabled" : ""} title="Move down"><i class="bi bi-chevron-down"></i></button>
+          <button type="button" class="text-danger remove-file" title="Remove"><i class="bi bi-x-lg"></i></button>
+        </span>
+      `;
+      fileListEl.appendChild(li);
+    });
+    updateOrderInput();
+    submitBtn.disabled = orderedFiles.length === 0;
+  }
+
+  function updateOrderInput() {
+    orderInput.value = orderedFiles.map((_, i) => i).join(",");
+  }
+
+  function addFiles(fileArray) {
+    orderedFiles = orderedFiles.concat(Array.from(fileArray));
+    renderList();
+  }
+
+  dropzone.addEventListener("click", () => fileInput.click());
+  dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("dragover"); });
+  dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+  dropzone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropzone.classList.remove("dragover");
+    addFiles(e.dataTransfer.files);
+  });
+  fileInput.addEventListener("change", () => addFiles(fileInput.files));
+
+  fileListEl.addEventListener("click", (e) => {
+    const li = e.target.closest(".file-list-item");
+    if (!li) return;
+    const idx = parseInt(li.dataset.index, 10);
+
+    if (e.target.closest(".move-up")) {
+      if (idx > 0) {
+        [orderedFiles[idx - 1], orderedFiles[idx]] = [orderedFiles[idx], orderedFiles[idx - 1]];
+        renderList();
+      }
+    } else if (e.target.closest(".move-down")) {
+      if (idx < orderedFiles.length - 1) {
+        [orderedFiles[idx + 1], orderedFiles[idx]] = [orderedFiles[idx], orderedFiles[idx + 1]];
+        renderList();
+      }
+    } else if (e.target.closest(".remove-file")) {
+      orderedFiles.splice(idx, 1);
+      renderList();
+    }
+  });
+
+  document.getElementById("combine-pdf-form").addEventListener("submit", (e) => {
+    if (orderedFiles.length === 0) {
+      e.preventDefault();
+      return;
+    }
+    const dt = new DataTransfer();
+    orderedFiles.forEach((f) => dt.items.add(f));
+    fileInput.files = dt.files;
+  });
+});
+</script>
+{% endblock %}

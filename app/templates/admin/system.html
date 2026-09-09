@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}System Info — Admin{% endblock %}
+{% block content %}
+
+<div class="hero-index">ADMIN</div>
+<h1 class="h3 mb-4">Server system info</h1>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-6">
+    <div class="card-snpro p-4">
+      <h2 class="h5 mb-3">Platform</h2>
+      <div class="job-row"><span>OS</span><span class="text-body-secondary">{{ info.system }} {{ info.release }}</span></div>
+      <div class="job-row"><span>Hostname</span><span class="text-body-secondary">{{ info.node }}</span></div>
+      <div class="job-row"><span>Machine</span><span class="text-body-secondary">{{ info.machine }}</span></div>
+      <div class="job-row"><span>Processor</span><span class="text-body-secondary">{{ info.processor }}</span></div>
+      <div class="job-row"><span>Python</span><span class="text-body-secondary">{{ info.python_version }}</span></div>
+      <div class="job-row"><span>CPU cores</span><span class="text-body-secondary">{{ info.cpu_count }}</span></div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card-snpro p-4">
+      <h2 class="h5 mb-3">Resources</h2>
+      {% if psutil_stats %}
+        <div class="job-row"><span>CPU usage</span><span class="text-body-secondary">{{ psutil_stats.cpu_percent }}%</span></div>
+        <div class="job-row"><span>Memory</span><span class="text-body-secondary">{{ psutil_stats.mem_used_gb }} / {{ psutil_stats.mem_total_gb }} GB ({{ psutil_stats.mem_percent }}%)</span></div>
+      {% else %}
+        <p class="text-body-secondary small">psutil isn't installed — install it for live CPU/RAM stats.</p>
+      {% endif %}
+      <div class="job-row"><span>Storage disk</span><span class="text-body-secondary">{{ disk.used_gb }} / {{ disk.total_gb }} GB ({{ disk.percent }}%)</span></div>
+      <div class="job-row">
+        <span>Redis / Celery broker</span>
+        {% if redis_ok %}
+          <span class="status-pill success">reachable</span>
+        {% else %}
+          <span class="status-pill failure" title="{{ redis_error }}">unreachable</span>
+        {% endif %}
+      </div>
+      {% if not redis_ok and redis_error %}
+        <p class="text-body-secondary small mt-2 mb-0">{{ redis_error }}</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<a href="{{ url_for('admin.dashboard') }}" class="small">← Back to admin overview</a>
+
+{% endblock %}

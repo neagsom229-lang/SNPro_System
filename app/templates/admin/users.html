@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Users — Admin{% endblock %}
+
+{% block content %}
+
+<div class="hero-index">ADMIN</div>
+<h1 class="h3 mb-4">Users</h1>
+
+<div class="card-snpro p-4">
+  {% if pagination.items %}
+    {% for u in pagination.items %}
+      <div class="job-row">
+        <div>
+          <strong>{{ u.username }}</strong>
+          <div class="text-body-secondary small">{{ u.email }} · joined {{ u.created_at.strftime('%Y-%m-%d') }}</div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          {% if u.is_admin %}<span class="badge text-bg-dark">admin</span>{% endif %}
+
+          <form method="post" action="{{ url_for('admin.toggle_admin', user_id=u.id) }}">
+            {{ csrf_token() }}
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="checkbox" name="confirm" value="yes" required>
+              <label class="form-check-label small">Confirm</label>
+            </div>
+            <button type="submit" class="btn btn-sm btn-outline-secondary" {{ 'disabled' if u.id == current_user.id }}>
+              {{ 'Revoke admin' if u.is_admin else 'Make admin' }}
+            </button>
+          </form>
+        </div>
+      </div>
+    {% endfor %}
+
+    <!-- Pagination -->
+    <nav class="mt-4">
+      <ul class="pagination pagination-sm justify-content-center mb-0">
+        <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
+          <a class="page-link" href="{{ url_for('admin.users', page=pagination.prev_num) }}">Prev</a>
+        </li>
+        <li class="page-item disabled"><span class="page-link">{{ pagination.page }} / {{ pagination.pages or 1 }}</span></li>
+        <li class="page-item {{ 'disabled' if not pagination.has_next }}">
+          <a class="page-link" href="{{ url_for('admin.users', page=pagination.next_num) }}">Next</a>
+        </li>
+      </ul>
+    </nav>
+  {% else %}
+    <p class="text-body-secondary mb-0">No users found.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

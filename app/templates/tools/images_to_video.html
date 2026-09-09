@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block title %}Images to Video — SNPro{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+  <div class="d-flex align-items-center gap-3 mb-4" data-aos="fade-up">
+    <div class="tool-icon-badge">
+      <i class="bi bi-images"></i>
+    </div>
+    <div>
+      <h1 class="h3 mb-1">Images to Video</h1>
+      <p class="text-secondary mb-0">Turn your photos into a cinematic slideshow with AI motion and voiceover.</p>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card shadow-sm border-0" data-aos="fade-up" data-aos-delay="50">
+        <div class="card-body p-4">
+          <form method="post" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="images">Images (select multiple, in order)</label>
+              <div class="upload-dropzone" data-for="images">
+                <i class="bi bi-images fs-1 text-primary"></i>
+                <p class="mb-1 mt-2">Drag photos here, or <span class="link-primary text-decoration-underline">browse</span></p>
+                <small class="text-secondary">.png, .jpg, .jpeg, .webp, .bmp — select 2 or more</small>
+                <input type="file" id="images" name="images" class="d-none" accept=".png,.jpg,.jpeg,.webp,.bmp" multiple required>
+              </div>
+            </div>
+
+            <!-- AI Features -->
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="ken_burns" name="ken_burns">
+                  <label class="form-check-label" for="ken_burns">
+                    <i class="bi bi-arrows-move me-1"></i> Ken Burns effect (zoom + pan)
+                  </label>
+                  <div class="text-secondary small">Adds cinematic motion to each photo.</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="voiceover" name="voiceover" onclick="toggleVoiceover()">
+                  <label class="form-check-label" for="voiceover">
+                    <i class="bi bi-mic me-1"></i> AI Voiceover
+                  </label>
+                  <div class="text-secondary small">Generate a natural‑sounding narration.</div>
+                </div>
+              </div>
+            </div>
+
+            <div id="voiceoverOptions" style="display:none;">
+              <div class="mb-3">
+                <label class="form-label fw-semibold" for="script">Script for voiceover</label>
+                <textarea class="form-control" id="script" name="script" rows="4" placeholder="Write a script to narrate your slideshow..."></textarea>
+              </div>
+              <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold" for="voice_lang">Language</label>
+                  <select class="form-select" id="voice_lang" name="voice_lang">
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="km">Khmer</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold" for="voice_id">ElevenLabs Voice ID (optional)</label>
+                  <input type="text" class="form-control" id="voice_id" name="voice_id" placeholder="e.g. 21m00Tcm4TlvDq8ikWAM">
+                  <div class="form-text">Leave empty to use the default voice.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Background music -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="audio">Background music (optional)</label>
+              <div class="upload-dropzone" data-for="audio">
+                <i class="bi bi-music-note-beamed fs-1 text-primary"></i>
+                <p class="mb-1 mt-2">Drag an mp3/wav here, or <span class="link-primary text-decoration-underline">browse</span></p>
+                <small class="text-secondary">.mp3, .wav, .m4a — optional, leave empty for silent slideshow</small>
+                <input type="file" id="audio" name="audio" class="d-none" accept=".mp3,.wav,.m4a">
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label fw-semibold" for="fps">Frames per second</label>
+              <input type="number" class="form-control" id="fps" name="fps" value="1" min="1" max="30">
+              <div class="form-text">Low values (1–3) give each photo more screen time.</div>
+            </div>
+
+            <button type="submit" class="btn btn-accent w-100">Build AI Video</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card border-0 bg-body-tertiary" data-aos="fade-up" data-aos-delay="100">
+        <div class="card-body p-4">
+          <h2 class="h6 mb-3">How it works</h2>
+          <ol class="ps-3 mb-0 small text-secondary">
+            <li class="mb-2">Upload your images in the desired order.</li>
+            <li class="mb-2">Enable <strong>Ken Burns</strong> for cinematic motion.</li>
+            <li class="mb-2">Add a <strong>voiceover script</strong> to narrate your story.</li>
+            <li class="mb-2">Optionally, add background music.</li>
+            <li class="mb-2">We generate a professional video with all elements.</li>
+            <li>Download your finished MP4.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleVoiceover() {
+  var cb = document.getElementById('voiceover');
+  var options = document.getElementById('voiceoverOptions');
+  options.style.display = cb.checked ? 'block' : 'none';
+}
+</script>
+
+<style>
+  .tool-icon-badge { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: var(--bs-primary-bg-subtle, rgba(13,110,253,.12)); color: var(--bs-primary); font-size: 1.4rem; }
+  .upload-dropzone { border: 2px dashed var(--bs-border-color); border-radius: 12px; cursor: pointer; transition: border-color .15s ease, background-color .15s ease; padding: 2rem 1.25rem; text-align: center; }
+  .upload-dropzone.dragover { border-color: var(--bs-primary); background-color: var(--bs-primary-bg-subtle, rgba(13,110,253,.06)); }
+  .upload-dropzone input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ super() }}
+<script>
+(function () {
+  // --- Keyboard-accessible dropzones + visible "file selected" confirmation ---
+  document.querySelectorAll('.upload-dropzone[data-for]').forEach(function (zone) {
+    var input = document.getElementById(zone.getAttribute('data-for'));
+    if (!input) return;
+
+    zone.setAttribute('role', 'button');
+    zone.setAttribute('tabindex', '0');
+    if (!zone.hasAttribute('aria-label')) {
+      zone.setAttribute('aria-label', 'Upload ' + (input.name || 'file'));
+    }
+
+    zone.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        input.click();
+      }
+    });
+    zone.addEventListener('click', function (e) {
+      if (e.target.tagName !== 'INPUT') input.click();
+    });
+
+    ['dragenter', 'dragover'].forEach(function (evt) {
+      zone.addEventListener(evt, function (e) {
+        e.preventDefault();
+        zone.classList.add('dragover');
+      });
+    });
+    ['dragleave', 'drop'].forEach(function (evt) {
+      zone.addEventListener(evt, function (e) {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+      });
+    });
+    zone.addEventListener('drop', function (e) {
+      var files = e.dataTransfer.files;
+      if (files && files.length) {
+        input.files = files;
+        input.dispatchEvent(new Event('change'));
+      }
+    });
+
+    input.addEventListener('change', function () {
+      var label = zone.querySelector('.dz-filename');
+      if (input.files && input.files.length) {
+        if (!label) {
+          label = document.createElement('p');
+          label.className = 'dz-filename small fw-semibold text-accent mt-2 mb-0';
+          zone.appendChild(label);
+        }
+        var names = Array.from(input.files).map(function (f) { return f.name; }).join(', ');
+        label.textContent = '\u2713 ' + names;
+      } else if (label) {
+        label.remove();
+      }
+    });
+  });
+
+  // --- Submit button: disable + spinner instead of silently sitting there ---
+  document.querySelectorAll('form').forEach(function (form) {
+    form.addEventListener('submit', function () {
+      var btn = form.querySelector('button[type="submit"]');
+      if (btn && !btn.disabled) {
+        btn.dataset.originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.setAttribute('aria-busy', 'true');
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing\u2026';
+      }
+    });
+  });
+})();
+</script>
+{% endblock %}

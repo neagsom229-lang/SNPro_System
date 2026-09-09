@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Search results | SNPro{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="display-4 display-font">Results for “{{ query }}”</h1>
+    {% if results %}
+        <div class="row row-cols-1 row-cols-md-3 g-4 mt-3">
+            {% for tool in results %}
+                <div class="col">
+                    <a href="{{ url_for('tools.tool_page', slug=tool.slug) }}" class="tool-tile">
+                        <div class="tool-icon"><i class="bi {{ tool.icon }}"></i></div>
+                        <h3>{{ tool.name }}</h3>
+                        <p>{{ tool.desc }}</p>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="lead text-dim">No tools found matching “{{ query }}”. Try a different term.</p>
+    {% endif %}
+</div>
+{% endblock %}

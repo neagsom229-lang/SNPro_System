@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}All jobs — Admin{% endblock %}
+{% block content %}
+
+<div class="hero-index">ADMIN</div>
+<h1 class="h3 mb-4">All jobs</h1>
+
+<div class="card-snpro p-4">
+  {% if pagination.items %}
+    {% for job in pagination.items %}
+      <div class="job-row">
+        <div>
+          <strong>{{ job.tool.replace('_', ' ')|title }}</strong>
+          <div class="text-body-secondary small">
+            user #{{ job.user_id }} · {{ job.input_label or '—' }} · {{ job.created_at.strftime('%Y-%m-%d %H:%M') }} UTC
+          </div>
+        </div>
+        <span class="status-pill {{ job.status }}">{{ job.status }}</span>
+      </div>
+    {% endfor %}
+
+    <nav class="mt-4">
+      <ul class="pagination pagination-sm justify-content-center mb-0">
+        <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
+          <a class="page-link" href="{{ url_for('admin.jobs', page=pagination.prev_num, status=status, user_id=user_id) }}">Prev</a>
+        </li>
+        <li class="page-item disabled"><span class="page-link">{{ pagination.page }} / {{ pagination.pages or 1 }}</span></li>
+        <li class="page-item {{ 'disabled' if not pagination.has_next }}">
+          <a class="page-link" href="{{ url_for('admin.jobs', page=pagination.next_num, status=status, user_id=user_id) }}">Next</a>
+        </li>
+      </ul>
+    </nav>
+  {% else %}
+    <p class="text-body-secondary mb-0">No jobs found.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Profile — SNPro{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-6">
+      <div class="card-snpro p-4 p-md-5" data-aos="fade-up">
+        <h1 class="display-font h3 mb-1">Your Profile</h1>
+        <p class="text-dim mb-4">Update your account details.</p>
+
+        <form method="post">
+          <!-- CSRF token removed (consistent with other working pages) -->
+          <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" class="form-control" id="username" name="username" 
+                   value="{{ user.username }}" required>
+          </div>
+          <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" name="email" 
+                   value="{{ user.email }}" required>
+          </div>
+
+          <hr class="my-4">
+
+          <h5 class="display-font">Change Password</h5>
+          <p class="text-dim small">Leave blank if you don't want to change it.</p>
+          <div class="mb-3">
+            <label for="password" class="form-label">New Password</label>
+            <input type="password" class="form-control" id="password" name="password" 
+                   placeholder="••••••••">
+          </div>
+          <div class="mb-3">
+            <label for="confirm_password" class="form-label">Confirm Password</label>
+            <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
+                   placeholder="••••••••">
+          </div>
+
+          <button type="submit" class="btn btn-accent w-100">Save Changes</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

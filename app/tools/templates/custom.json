@@ -1,0 +1,12 @@
+{
+  "name": "Custom",
+  "transition": {"type": "crossfade", "duration": 0.5},
+  "text_style": {
+    "font": "Arial", "size": 42, "color": "white",
+    "position": "bottom", "outline_color": "black", "outline_width": 2
+  },
+  "color_grade": {"contrast": 1.0, "saturation": 1.0, "brightness": 0.0},
+  "audio_ducking_level": 0.25,
+  "resolution": [1920, 1080],
+  "aspect_ratio": "16:9"
+}

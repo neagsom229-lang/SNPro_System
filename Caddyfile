@@ -1,0 +1,24 @@
+{$DOMAIN} {
+	# Caddy automatically requests and renews a Let's Encrypt certificate
+	# for whatever hostname you put in the DOMAIN env var — no manual
+	# certbot commands needed. For local-only testing without a domain,
+	# leave DOMAIN unset and Caddy serves plain http on :80 instead.
+
+	reverse_proxy web:5000
+
+	# Match Flask's own MAX_CONTENT_LENGTH_MB (default 500MB) so large
+	# video uploads aren't rejected by the proxy before Flask ever sees
+	# them. Raise both together if you increase MAX_CONTENT_LENGTH_MB.
+	request_body {
+		max_size 500MB
+	}
+
+	# Uploads over a slow mobile connection can take a while to arrive —
+	# give the proxy generous timeouts rather than cutting the request off.
+	timeouts {
+		read_body 10m
+		read_header 30s
+	}
+
+	encode gzip
+}

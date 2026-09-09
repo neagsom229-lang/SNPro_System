@@ -1,0 +1,12 @@
+{
+  "name": "Slideshow",
+  "transition": {"type": "crossfade", "duration": 1.5},
+  "text_style": {
+    "font": "Arial", "size": 40, "color": "white",
+    "position": "bottom", "outline_color": "black", "outline_width": 2
+  },
+  "color_grade": {"contrast": 1.0, "saturation": 1.0, "brightness": 0.0},
+  "audio_ducking_level": 0.4,
+  "resolution": [1920, 1080],
+  "aspect_ratio": "16:9"
+}

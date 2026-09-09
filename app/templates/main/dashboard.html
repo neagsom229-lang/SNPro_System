@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — SNPro{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <!-- Welcome Section -->
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4" data-aos="fade-up">
+    <div>
+      <div class="hero-index">DASHBOARD</div>
+      <h1 class="display-4 display-font">Hi, {{ current_user.username }}.</h1>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('tools.history') }}" class="btn btn-outline-snpro btn-sm">
+        <i class="bi bi-clock-history me-1"></i> History
+      </a>
+      {% if current_user.is_admin %}
+      <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-snpro btn-sm">
+        <i class="bi bi-shield-lock me-1"></i> Admin
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Stats with animated counters -->
+  <div class="row g-3 mb-4" data-aos="fade-up" data-aos-delay="100">
+    <div class="col-6 col-lg-3">
+      <div class="card-snpro p-3 text-center">
+        <span class="stat-number display-4 display-font" data-target="{{ stats.total_jobs }}">0</span>
+        <div class="text-body-secondary small">Total jobs</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card-snpro p-3 text-center">
+        <span class="stat-number display-4 display-font text-success" data-target="{{ stats.completed_jobs }}">0</span>
+        <div class="text-body-secondary small">Completed</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card-snpro p-3 text-center">
+        <span class="stat-number display-4 display-font text-danger" data-target="{{ stats.failed_jobs }}">0</span>
+        <div class="text-body-secondary small">Failed</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card-snpro p-3 text-center">
+        <span class="stat-number display-4 display-font" data-target="{{ stats.storage_mb }}" data-suffix=" MB">0</span>
+        <div class="text-body-secondary small">Storage used</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions: personalized to the tools this user actually uses,
+       falling back to the first 4 tools in the catalog only for a brand
+       new account with no job history yet (quick_action_tools will be
+       unset/empty in that case, or if this template is rendered by an
+       older version of the dashboard() route that hasn't been updated to
+       pass it - so this degrades gracefully either way). -->
+  {% set quick_tools = quick_action_tools if quick_action_tools else tools[:4] %}
+  <div class="row g-3 mb-5" data-aos="fade-up" data-aos-delay="200">
+    <div class="col-12 d-flex align-items-center gap-2">
+      <h3 class="h5 display-font mb-0">Quick Actions</h3>
+      {% if quick_action_tools %}
+        <span class="status-pill success" title="Based on your most-used tools">
+          <i class="bi bi-stars"></i> Personalized
+        </span>
+      {% endif %}
+    </div>
+    {% for tool in quick_tools %}
+    <div class="col-6 col-md-3">
+      <a href="{{ url_for('tools.tool_page', slug=tool.slug) }}" class="tool-tile text-center p-3">
+        {% if tool.ai %}<span class="ai-badge">AI</span>{% endif %}
+        <div class="tool-icon mx-auto"><i class="bi {{ tool.icon }}"></i></div>
+        <h6 class="mt-2">{{ tool.name }}</h6>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- All Tools Grid -->
+  <div data-aos="fade-up" data-aos-delay="300">
+    <h3 class="h5 display-font mb-3">All Tools</h3>
+    <div class="row g-3">
+      {% for tool in tools %}
+      <div class="col-sm-6 col-lg-4">
+        <a href="{{ url_for('tools.tool_page', slug=tool.slug) }}" class="tool-tile">
+          {% if tool.ai %}<span class="ai-badge">AI</span>{% endif %}
+          <div class="tool-icon"><i class="bi {{ tool.icon }}"></i></div>
+          <h3>{{ tool.name }}</h3>
+          <p>{{ tool.desc }}</p>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Recent Jobs -->
+  <div class="card-snpro p-4 mt-5" data-aos="fade-up" data-aos-delay="400">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2 class="h5 mb-0">Recent jobs</h2>
+      <a href="{{ url_for('tools.history') }}" class="small">View all →</a>
+    </div>
+    {% if jobs %}
+      {% for job in jobs %}
+      <div class="job-row">
+        <div>
+          <a href="{{ url_for('tools.job_view', job_id=job.id) }}" class="text-decoration-none">
+            <strong>{{ job.tool.replace('_', ' ')|title }}</strong>
+          </a>
+          <div class="text-body-secondary small">{{ job.input_label or '—' }}</div>
+        </div>
+        <span class="status-pill {{ job.status }}">
+          {% if job.status == 'success' %}<i class="bi bi-check-circle-fill me-1"></i>Done
+          {% elif job.status == 'failure' %}<i class="bi bi-exclamation-octagon-fill me-1"></i>Failed
+          {% else %}<i class="bi bi-arrow-repeat me-1"></i>Running
+          {% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="text-body-secondary mb-0">No jobs yet — pick a tool above to get started.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{# Animated counters script #}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const counters = document.querySelectorAll('.stat-number');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const target = parseFloat(entry.target.dataset.target);
+          const suffix = entry.target.dataset.suffix || '';
+          animateCounter(entry.target, target, suffix);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.3 });
+
+    counters.forEach(c => observer.observe(c));
+
+    function animateCounter(el, target, suffix) {
+      if (!target) { el.textContent = '0' + suffix; return; }
+      let current = 0;
+      const step = target / 30;
+      const timer = setInterval(() => {
+        current += step;
+        if (current >= target) {
+          el.textContent = target + suffix;
+          clearInterval(timer);
+        } else {
+          el.textContent = Math.floor(current) + suffix;
+        }
+      }, 30);
+    }
+  });
+</script>
+{% endblock %}

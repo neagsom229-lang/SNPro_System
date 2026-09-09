@@ -1,0 +1,12 @@
+{
+  "name": "Social Media (Short)",
+  "transition": {"type": "slide", "duration": 0.25},
+  "text_style": {
+    "font": "Arial Black", "size": 64, "color": "yellow",
+    "position": "center", "outline_color": "black", "outline_width": 4
+  },
+  "color_grade": {"contrast": 1.2, "saturation": 1.25, "brightness": 0.03},
+  "audio_ducking_level": 0.3,
+  "resolution": [1080, 1920],
+  "aspect_ratio": "9:16"
+}

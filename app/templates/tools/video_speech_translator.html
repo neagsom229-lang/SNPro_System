@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}Video Speech Translator · SNPro{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+  <div class="d-flex align-items-center gap-3 mb-4" data-aos="fade-up">
+    <div class="tool-icon-badge">
+      <i class="bi bi-file-play"></i>
+    </div>
+    <div>
+      <h1 class="h3 mb-1">Video Speech Translator</h1>
+      <p class="text-secondary mb-0">Translate the spoken audio of a video into another language with dubbed speech and optional subtitles.</p>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- ===== MAIN FORM ===== -->
+    <div class="col-lg-8">
+      <div class="card shadow-sm border-0" data-aos="fade-up" data-aos-delay="50">
+        <div class="card-body p-4">
+          <form id="video-translator-form" method="POST" enctype="multipart/form-data">
+            
+
+            <!-- Drag & drop upload -->
+            <div id="video-dropzone" class="upload-dropzone mb-2">
+              <i class="bi bi-cloud-arrow-up fs-1 text-primary"></i>
+              <p class="mb-1 mt-2">Drag &amp; drop a video here, or <span class="link-primary text-decoration-underline">browse</span></p>
+              <small class="text-secondary">Supported formats: .mp4 .mov .avi .mkv</small>
+              <input type="file" id="video-input" name="video" class="d-none" accept=".mp4,.mov,.avi,.mkv" required>
+            </div>
+
+            <!-- Selected file info -->
+            <div id="selected-file-info" class="d-none align-items-center gap-2 mt-2 p-2 border rounded">
+              <i class="bi bi-file-earmark-play fs-5"></i>
+              <span id="selected-file-name" class="fw-semibold"></span>
+              <span id="selected-file-size" class="text-secondary small"></span>
+              <button type="button" id="clear-file-btn" class="btn btn-sm btn-link text-danger ms-auto">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+
+            <!-- Language options -->
+            <div class="row g-3 mt-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Source language</label>
+                <select name="source_lang" class="form-select">
+                  <option value="">Auto-detect</option>
+                  {% for code, label in languages.items() %}
+                  <option value="{{ code }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+                <div class="form-text">Leave as "Auto-detect" for automatic language detection.</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Translate to</label>
+                <select name="target_lang" class="form-select" required>
+                  <option value="" disabled selected>Choose a language...</option>
+                  {% for code, label in languages.items() %}
+                  <option value="{{ code }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-12">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="generate_subtitles" id="generate-subtitles" checked>
+                  <label class="form-check-label" for="generate-subtitles">
+                    Also generate subtitles (.srt) in the target language
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-accent w-100 mt-4" id="translate-submit-btn" disabled>
+              <i class="bi bi-translate me-2"></i>Translate Video
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SIDEBAR ===== -->
+    <div class="col-lg-4">
+      <div class="card border-0 bg-body-tertiary" data-aos="fade-up" data-aos-delay="100">
+        <div class="card-body p-4">
+          <h2 class="h6 mb-3">How it works</h2>
+          <ol class="ps-3 mb-0 small text-secondary">
+            <li class="mb-2">Upload a video with spoken audio (any language, auto‑detected).</li>
+            <li class="mb-2">The speech is transcribed and translated into your chosen target language.</li>
+            <li class="mb-2">A new voice track is generated and dubbed onto the video, replacing the original audio.</li>
+            <li class="mb-2">Optionally, matching subtitles are generated and made available for download.</li>
+          </ol>
+        </div>
+      </div>
+      <div class="card border-0 bg-body-tertiary mt-3" data-aos="fade-up" data-aos-delay="150">
+        <div class="card-body p-4">
+          <h2 class="h6 mb-2">✨ What you get</h2>
+          <ul class="ps-3 small text-secondary mb-0">
+            <li class="mb-1">Translated video with dubbed speech</li>
+            <li class="mb-1">Optional .srt subtitles</li>
+            <li>High‑quality audio using ElevenLabs (fallback to gTTS)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card border-0 bg-body-tertiary mt-3" data-aos="fade-up" data-aos-delay="200">
+        <div class="card-body p-4">
+          <h2 class="h6 mb-2">⏳ Processing</h2>
+          <p class="small text-secondary mb-0">
+            Larger videos take longer – the job runs in the background. You'll be redirected to a live progress page automatically.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .tool-icon-badge {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bs-primary-bg-subtle, rgba(13,110,253,.12));
+    color: var(--bs-primary);
+    font-size: 1.4rem;
+  }
+  .upload-dropzone {
+    border: 2px dashed var(--bs-border-color);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color .15s ease, background-color .15s ease;
+    padding: 2rem 1.25rem;
+    text-align: center;
+  }
+  .upload-dropzone.dragover {
+    border-color: var(--bs-primary);
+    background-color: var(--bs-primary-bg-subtle, rgba(13,110,253,.06));
+  }
+  .upload-dropzone input[type="file"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    overflow: hidden;
+  }
+  #selected-file-info {
+    background: var(--surface-2);
+    border-color: var(--border);
+  }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ super() }}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const dropzone = document.getElementById("video-dropzone");
+  const fileInput = document.getElementById("video-input");
+  const infoBox = document.getElementById("selected-file-info");
+  const nameEl = document.getElementById("selected-file-name");
+  const sizeEl = document.getElementById("selected-file-size");
+  const clearBtn = document.getElementById("clear-file-btn");
+  const submitBtn = document.getElementById("translate-submit-btn");
+
+  function showFile(file) {
+    if (!file) {
+      infoBox.classList.add("d-none");
+      infoBox.classList.remove("d-flex");
+      submitBtn.disabled = true;
+      return;
+    }
+    nameEl.textContent = file.name;
+    sizeEl.textContent = `(${(file.size / (1024 * 1024)).toFixed(1)} MB)`;
+    infoBox.classList.remove("d-none");
+    infoBox.classList.add("d-flex");
+    submitBtn.disabled = false;
+  }
+
+  function assignFile(file) {
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    fileInput.files = dt.files;
+    showFile(file);
+  }
+
+  dropzone.addEventListener("click", () => fileInput.click());
+  dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("dragover"); });
+  dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+  dropzone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropzone.classList.remove("dragover");
+    if (e.dataTransfer.files.length) assignFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files.length) showFile(fileInput.files[0]);
+  });
+  clearBtn.addEventListener("click", () => {
+    fileInput.value = "";
+    showFile(null);
+  });
+});
+</script>
+{% endblock %}

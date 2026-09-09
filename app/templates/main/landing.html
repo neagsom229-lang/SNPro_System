@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+  {# Swiper CSS only - AOS is already loaded once, globally, by base.html #}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+  <style>
+    /* Additional carousel polish */
+    .tools-swiper .swiper-slide {
+      height: auto;
+    }
+    .tools-swiper .swiper-pagination-bullet {
+      background: var(--accent);
+      opacity: 0.6;
+    }
+    .tools-swiper .swiper-pagination-bullet-active {
+      opacity: 1;
+    }
+    .hero-panel .stat-number {
+      font-family: var(--font-display);
+      font-size: 2.2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-panel .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      margin-top: 0.1rem;
+    }
+    /* Carousel pause control - required for WCAG 2.2.2 (Pause, Stop, Hide)
+       since the slider auto-advances; keyboard/screen-reader users need an
+       explicit way to stop it without first having to swipe/drag. */
+    .carousel-pause-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      font-size: .8rem;
+      color: var(--text-dim);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: .3rem .9rem;
+      transition: border-color var(--dur-fast), color var(--dur-fast);
+    }
+    .carousel-pause-btn:hover { border-color: var(--accent); color: var(--text); }
+  </style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero Panel -->
+<div class="hero-panel mb-5" data-aos="fade-up">
+  <div class="hero-index" data-aos="fade-down" data-aos-delay="50">{{ tools|length }} TOOLS · ONE ACCOUNT</div>
+  <h1 class="display-5 fw-bold mb-3" data-aos="fade-right" data-aos-delay="100">
+    A small media toolkit that does the boring work for you.
+  </h1>
+  <p class="text-body-secondary mb-4" style="max-width:60ch;" data-aos="fade-right" data-aos-delay="200">
+    Download a video, transcribe a voice note, pull frames from a clip, turn a PDF into
+    something editable, cut a subject out of a photo, repair an old picture, strip or swap a
+    video's audio, sharpen up footage, print a QR code, or read text out loud —
+    from one dashboard, saved to your own account.
+  </p>
+  <div class="d-flex gap-2 flex-wrap" data-aos="fade-up" data-aos-delay="300">
+    <a href="{{ url_for('auth.register') }}" class="btn btn-accent btn-lg px-4">Create a free account</a>
+    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-snpro btn-lg px-4">Sign in</a>
+  </div>
+
+  <!-- Animated Stats - counts are computed from the real tool list below,
+       never hand-typed, so they can't silently drift out of date again as
+       more tools ship. -->
+  <div class="hero-stats" data-aos="fade-up" data-aos-delay="400">
+    <div>
+      <span class="stat-number" data-target="{{ tools|length }}">0</span>
+      <div class="stat-label">tools, one login</div>
+    </div>
+    <div>
+      <span class="stat-number" data-target="{{ tools|selectattr('ai', 'equalto', true)|list|length }}">0</span>
+      <div class="stat-label">AI-powered tools</div>
+    </div>
+    <div>
+      <span class="stat-number" data-target="0">0</span>
+      <div class="stat-label">files shared between accounts</div>
+    </div>
+  </div>
+</div>
+
+<!-- Value Trio -->
+<div class="value-trio mb-5" data-aos="fade-up" data-aos-delay="100">
+  <div>
+    <h4>Runs in the background</h4>
+    <p>Heavier jobs — video, audio, AI — queue up and process without tying up your browser tab. Come back when it's done.</p>
+  </div>
+  <div>
+    <h4>Private by default</h4>
+    <p>Every upload and output lives in your own storage folder. Nothing is shared across accounts, and you can delete any job's files at any time.</p>
+  </div>
+  <div>
+    <h4>No install, no setup</h4>
+    <p>Everything runs server-side — no codecs, no Python environments, no command line. Just a browser and an account.</p>
+  </div>
+</div>
+
+<!-- Tool Carousel (Swiper) -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="h4 mb-0" data-aos="fade-right">What's inside</h2>
+  <button type="button" id="carouselPauseBtn" class="carousel-pause-btn" aria-pressed="false"
+          data-no-progress>
+    <i class="bi bi-pause-fill" aria-hidden="true"></i>
+    <span id="carouselPauseLabel">Pause auto-scroll</span>
+  </button>
+</div>
+<div class="swiper tools-swiper mb-4" data-aos="fade-up" data-aos-delay="100"
+     role="region" aria-label="Available tools, auto-scrolling carousel" aria-live="off">
+  <div class="swiper-wrapper">
+    {% for tool in tools %}
+    <div class="swiper-slide">
+      <div class="tool-tile h-100">
+        {% if tool.ai %}<span class="ai-badge">AI</span>{% endif %}
+        <div class="tool-icon"><i class="bi {{ tool.icon }}"></i></div>
+        <h3>{{ tool.name }}</h3>
+        <p>{{ tool.desc }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="swiper-pagination"></div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+  {# AOS is already initialized once by base.html - nothing to add here. #}
+
+  {# Swiper JS #}
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+  <script>
+    const toolsSwiper = new Swiper('.tools-swiper', {
+      slidesPerView: 1,
+      spaceBetween: 20,
+      loop: true,
+      autoplay: {
+        delay: 4000,
+        disableOnInteraction: true,
+      },
+      pagination: {
+        el: '.swiper-pagination',
+        clickable: true,
+      },
+      breakpoints: {
+        768: { slidesPerView: 2 },
+        1024: { slidesPerView: 3 },
+      },
+      grabCursor: true,
+      touchEventsTarget: 'container',
+      a11y: {
+        enabled: true,
+        prevSlideMessage: 'Previous tool',
+        nextSlideMessage: 'Next tool',
+      },
+    });
+
+    // Explicit pause/resume control - WCAG 2.2.2 requires this for any
+    // auto-advancing content, and it's the only reliable way a
+    // keyboard-only or screen-reader user can stop the rotation.
+    (function() {
+      const btn = document.getElementById('carouselPauseBtn');
+      const label = document.getElementById('carouselPauseLabel');
+      const icon = btn.querySelector('i');
+      let paused = false;
+
+      btn.addEventListener('click', function() {
+        paused = !paused;
+        if (paused) {
+          toolsSwiper.autoplay.stop();
+          label.textContent = 'Resume auto-scroll';
+          icon.className = 'bi bi-play-fill';
+        } else {
+          toolsSwiper.autoplay.start();
+          label.textContent = 'Pause auto-scroll';
+          icon.className = 'bi bi-pause-fill';
+        }
+        btn.setAttribute('aria-pressed', String(paused));
+      });
+
+      // Respect the OS-level reduced-motion preference outright - don't
+      // even start the auto-rotation for users who've asked their system
+      // to minimize motion.
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        toolsSwiper.autoplay.stop();
+        paused = true;
+        label.textContent = 'Resume auto-scroll';
+        icon.className = 'bi bi-play-fill';
+        btn.setAttribute('aria-pressed', 'true');
+      }
+    })();
+  </script>
+
+  {# Animated Counters #}
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const counters = document.querySelectorAll('.stat-number');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const target = parseInt(entry.target.dataset.target, 10);
+            animateCounter(entry.target, target);
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.5 });
+
+      counters.forEach(c => observer.observe(c));
+
+      function animateCounter(el, target) {
+        if (target === 0) { el.textContent = '0'; return; }
+        let current = 0;
+        const step = target / 30;
+        const timer = setInterval(() => {
+          current += step;
+          if (current >= target) {
+            el.textContent = target;
+            clearInterval(timer);
+          } else {
+            el.textContent = Math.floor(current);
+          }
+        }, 30);
+      }
+    });
+  </script>
+{% endblock %}

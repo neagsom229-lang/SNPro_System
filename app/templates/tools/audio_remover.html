@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Remove / Replace Audio — SNPro{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+  <div class="d-flex align-items-center gap-3 mb-4" data-aos="fade-up">
+    <div class="tool-icon-badge">
+      <i class="bi bi-mic-mute"></i>
+    </div>
+    <div>
+      <h1 class="h3 mb-1">Remove / Replace Video Audio</h1>
+      <p class="text-secondary mb-0">Strip a video's original audio track, or swap it out for your own MP3/WAV.</p>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card shadow-sm border-0" data-aos="fade-up" data-aos-delay="50">
+        <div class="card-body p-4">
+          <form method="post" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="video">Video file</label>
+              <div class="upload-dropzone" data-for="video">
+                <i class="bi bi-file-earmark-play fs-1 text-primary"></i>
+                <p class="mb-1 mt-2">Drag a video here, or <span class="link-primary text-decoration-underline">browse</span></p>
+                <small class="text-secondary">.mp4, .mov, .mkv, .avi, .webm</small>
+                <input type="file" id="video" name="video" class="d-none" accept=".mp4,.mov,.mkv,.avi,.webm" required>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label fw-semibold" for="audio">Replacement audio (optional)</label>
+              <div class="upload-dropzone" data-for="audio">
+                <i class="bi bi-music-note-beamed fs-1 text-primary"></i>
+                <p class="mb-1 mt-2">Drag an mp3/wav here, or <span class="link-primary text-decoration-underline">browse</span></p>
+                <small class="text-secondary">.mp3, .wav, .m4a, .ogg, .flac — leave empty to just remove audio</small>
+                <input type="file" id="audio" name="audio" class="d-none" accept=".mp3,.wav,.m4a,.ogg,.flac">
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-accent w-100">Process video</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card border-0 bg-body-tertiary" data-aos="fade-up" data-aos-delay="100">
+        <div class="card-body p-4">
+          <h2 class="h6 mb-3">How it works</h2>
+          <ol class="ps-3 mb-0 small text-secondary">
+            <li class="mb-2">We load your video and extract its audio track.</li>
+            <li class="mb-2">If you provided a replacement, we attach it.</li>
+            <li class="mb-2">If not, we output a silent video.</li>
+            <li>You get a new MP4 with the audio modified.</li>
+          </ol>
+        </div>
+      </div>
+      <div class="card border-0 bg-body-tertiary mt-3" data-aos="fade-up" data-aos-delay="150">
+        <div class="card-body p-4">
+          <h2 class="h6 mb-2">Use cases</h2>
+          <p class="small text-secondary mb-0">Remove unwanted background music, add narration, or replace a soundtrack with a new one.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .tool-icon-badge { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: var(--bs-primary-bg-subtle, rgba(13,110,253,.12)); color: var(--bs-primary); font-size: 1.4rem; }
+  .upload-dropzone { border: 2px dashed var(--bs-border-color); border-radius: 12px; cursor: pointer; transition: border-color .15s ease, background-color .15s ease; padding: 2rem 1.25rem; text-align: center; }
+  .upload-dropzone.dragover { border-color: var(--bs-primary); background-color: var(--bs-primary-bg-subtle, rgba(13,110,253,.06)); }
+  .upload-dropzone input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ super() }}
+<script>
+(function () {
+  // --- Keyboard-accessible dropzones + visible "file selected" confirmation ---
+  document.querySelectorAll('.upload-dropzone[data-for]').forEach(function (zone) {
+    var input = document.getElementById(zone.getAttribute('data-for'));
+    if (!input) return;
+
+    zone.setAttribute('role', 'button');
+    zone.setAttribute('tabindex', '0');
+    if (!zone.hasAttribute('aria-label')) {
+      zone.setAttribute('aria-label', 'Upload ' + (input.name || 'file'));
+    }
+
+    zone.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        input.click();
+      }
+    });
+    zone.addEventListener('click', function (e) {
+      if (e.target.tagName !== 'INPUT') input.click();
+    });
+
+    ['dragenter', 'dragover'].forEach(function (evt) {
+      zone.addEventListener(evt, function (e) {
+        e.preventDefault();
+        zone.classList.add('dragover');
+      });
+    });
+    ['dragleave', 'drop'].forEach(function (evt) {
+      zone.addEventListener(evt, function (e) {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+      });
+    });
+    zone.addEventListener('drop', function (e) {
+      var files = e.dataTransfer.files;
+      if (files && files.length) {
+        input.files = files;
+        input.dispatchEvent(new Event('change'));
+      }
+    });
+
+    input.addEventListener('change', function () {
+      var label = zone.querySelector('.dz-filename');
+      if (input.files && input.files.length) {
+        if (!label) {
+          label = document.createElement('p');
+          label.className = 'dz-filename small fw-semibold text-accent mt-2 mb-0';
+          zone.appendChild(label);
+        }
+        var names = Array.from(input.files).map(function (f) { return f.name; }).join(', ');
+        label.textContent = '\u2713 ' + names;
+      } else if (label) {
+        label.remove();
+      }
+    });
+  });
+
+  // --- Submit button: disable + spinner instead of silently sitting there ---
+  document.querySelectorAll('form').forEach(function (form) {
+    form.addEventListener('submit', function () {
+      var btn = form.querySelector('button[type="submit"]');
+      if (btn && !btn.disabled) {
+        btn.dataset.originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.setAttribute('aria-busy', 'true');
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing\u2026';
+      }
+    });
+  });
+})();
+</script>
+{% endblock %}

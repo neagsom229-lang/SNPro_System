@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Admin — SNPro{% endblock %}
+{% block content %}
+
+<div class="hero-index">ADMIN</div>
+<h1 class="h3 mb-4">System overview</h1>
+<a href="{{ url_for('admin.system_info') }}" class="btn btn-outline-secondary btn-sm mb-4">
+  <i class="bi bi-hdd-stack"></i> Server system info
+</a>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card-snpro p-3 text-center">
+      <div class="h4 mb-0">{{ total_users }}</div>
+      <div class="text-body-secondary small">Total users</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card-snpro p-3 text-center">
+      <div class="h4 mb-0">{{ total_jobs }}</div>
+      <div class="text-body-secondary small">Total jobs</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card-snpro p-3 text-center">
+      <div class="h4 mb-0 text-success">{{ jobs_by_status.success }}</div>
+      <div class="text-body-secondary small">Completed</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card-snpro p-3 text-center">
+      <div class="h4 mb-0 text-danger">{{ jobs_by_status.failure }}</div>
+      <div class="text-body-secondary small">Failed</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card-snpro p-4">
+      <h2 class="h5 mb-3">Jobs by tool</h2>
+      {% for tool, count in jobs_by_tool %}
+        <div class="job-row">
+          <span>{{ tool.replace('_', ' ')|title }}</span>
+          <span class="badge text-bg-secondary">{{ count }}</span>
+        </div>
+      {% endfor %}
+      <a href="{{ url_for('admin.jobs') }}" class="small d-inline-block mt-3">View all jobs →</a>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card-snpro p-4">
+      <h2 class="h5 mb-3">Newest users</h2>
+      {% for u in recent_users %}
+        <div class="job-row">
+          <span>{{ u.username }} {% if u.is_admin %}<span class="badge text-bg-dark">admin</span>{% endif %}</span>
+          <span class="text-body-secondary small">{{ u.created_at.strftime('%Y-%m-%d') }}</span>
+        </div>
+      {% endfor %}
+      <a href="{{ url_for('admin.users') }}" class="small d-inline-block mt-3">Manage users →</a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

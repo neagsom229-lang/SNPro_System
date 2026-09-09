@@ -1,0 +1,12 @@
+{
+  "name": "Cinematic",
+  "transition": {"type": "crossfade", "duration": 1.0},
+  "text_style": {
+    "font": "Georgia", "size": 54, "color": "white",
+    "position": "bottom", "outline_color": "black", "outline_width": 3
+  },
+  "color_grade": {"contrast": 1.15, "saturation": 0.9, "brightness": -0.02},
+  "audio_ducking_level": 0.18,
+  "resolution": [1920, 1080],
+  "aspect_ratio": "16:9"
+}

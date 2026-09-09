@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Video Enhancer — SNPro{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+  <div class="d-flex align-items-center gap-3 mb-4" data-aos="fade-up">
+    <div class="tool-icon-badge">
+      <i class="bi bi-magic"></i>
+    </div>
+    <div>
+      <h1 class="h3 mb-1">Video Enhancer</h1>
+      <p class="text-secondary mb-0">Denoise, sharpen, upscale, and smooth motion — up to 4K at 120fps.</p>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card shadow-sm border-0" data-aos="fade-up" data-aos-delay="50">
+        <div class="card-body p-4">
+          <form method="post" enctype="multipart/form-data">
+               
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="video">Video file</label>
+              <div class="upload-dropzone" data-for="video">
+                <i class="bi bi-file-earmark-play fs-1 text-primary"></i>
+                <p class="mb-1 mt-2">Drag a video here, or <span class="link-primary text-decoration-underline">browse</span></p>
+                <small class="text-secondary">.mp4, .mov, .mkv, .avi, .webm — up to 15 minutes</small>
+                <input type="file" id="video" name="video" class="d-none" accept=".mp4,.mov,.mkv,.avi,.webm" required>
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-sm-6">
+                <label class="form-label fw-semibold" for="target_resolution">Output resolution</label>
+                <select class="form-select" id="target_resolution" name="target_resolution">
+                  <option value="original" selected>Keep original</option>
+                  <option value="720p">720p</option>
+                  <option value="1080p">1080p</option>
+                  <option value="4k">4K (Ultra HD)</option>
+                </select>
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label fw-semibold" for="target_fps">Output frame rate</label>
+                <select class="form-select" id="target_fps" name="target_fps">
+                  <option value="">Keep original</option>
+                  <option value="30">30 fps</option>
+                  <option value="60">60 fps</option>
+                  <option value="120">120 fps</option>
+                </select>
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label fw-semibold" for="denoise">Denoise</label>
+                <select class="form-select" id="denoise" name="denoise">
+                  <option value="off" selected>Off</option>
+                  <option value="light">Light (fast)</option>
+                  <option value="medium">Medium</option>
+                  <option value="strong">Strong (slower)</option>
+                </select>
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label fw-semibold" for="sharpen">Sharpen</label>
+                <select class="form-select" id="sharpen" name="sharpen">
+                  <option value="off">Off</option>
+                  <option value="light" selected>Light</option>
+                  <option value="strong">Strong</option>
+                </select>
+              </div>
+              <div class="col-sm-6 d-flex align-items-end">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="smooth_fps" name="smooth_fps">
+                  <label class="form-check-label" for="smooth_fps">Smooth motion (used if no fps chosen above)</label>
+                </div>
+              </div>
+              <div class="col-sm-6 d-flex align-items-end">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="color_enhance" name="color_enhance">
+                  <label class="form-check-label" for="color_enhance">Auto color enhance (contrast/saturation)</label>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="use_ai" name="use_ai" checked>
+                  <label class="form-check-label" for="use_ai">
+                    Use AI enhancement when available <span class="badge bg-body-secondary text-body-secondary border ms-1">Real-ESRGAN + RIFE</span>
+                  </label>
+                  <div class="form-text">Falls back automatically to FFmpeg if AI is unavailable or fails.</div>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-accent w-100">Enhance video</button>
+            <p class="text-body-secondary small mt-3 mb-0">
+              <i class="bi bi-info-circle"></i> Capped at 15 minutes per video on a shared server. 4K and 120fps take noticeably longer to process.
+            </p>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card border-0 bg-body-tertiary" data-aos="fade-up" data-aos-delay="100">
+        <div class="card-body p-4">
+          <h2 class="h6 mb-3">How it works</h2>
+          <ol class="ps-3 mb-0 small text-secondary">
+            <li class="mb-2">FFmpeg handles denoising, sharpening, color, and base scaling in one fast pass.</li>
+            <li class="mb-2">If enabled, AI models (Real-ESRGAN, RIFE) upscale resolution and smooth motion beyond what filters alone can do.</li>
+            <li class="mb-2">If AI is off or unavailable, FFmpeg's own scaling and motion interpolation fill in automatically.</li>
+            <li>The original audio is re-attached and you get an enhanced MP4.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .tool-icon-badge { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: var(--bs-primary-bg-subtle, rgba(13,110,253,.12)); color: var(--bs-primary); font-size: 1.4rem; }
+  .upload-dropzone { border: 2px dashed var(--bs-border-color); border-radius: 12px; cursor: pointer; transition: border-color .15s ease, background-color .15s ease; padding: 2rem 1.25rem; text-align: center; }
+  .upload-dropzone.dragover { border-color: var(--bs-primary); background-color: var(--bs-primary-bg-subtle, rgba(13,110,253,.06)); }
+  .upload-dropzone input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+</style>
+{% endblock %}

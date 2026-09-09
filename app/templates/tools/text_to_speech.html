@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Text to Speech — SNPro{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+  <div class="d-flex align-items-center gap-3 mb-4" data-aos="fade-up">
+    <div class="tool-icon-badge">
+      <i class="bi bi-volume-up"></i>
+    </div>
+    <div>
+      <h1 class="h3 mb-1">Text to Speech</h1>
+      <p class="text-secondary mb-0">Type or paste text and get back an MP3 voice file – instantly.</p>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card shadow-sm border-0" data-aos="fade-up" data-aos-delay="50">
+        <div class="card-body p-4">
+          <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+              <label for="text" class="form-label fw-semibold">Text</label>
+              <textarea class="form-control" id="text" name="text" rows="6" placeholder="Type something to read aloud..." required></textarea>
+            </div>
+            <div class="mb-4">
+              <label for="lang" class="form-label fw-semibold">Language</label>
+              <select class="form-select" id="lang" name="lang">
+                <option value="en">English</option>
+                <option value="km">Khmer</option>
+                <option value="fr">French</option>
+                <option value="es">Spanish</option>
+                <option value="de">German</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-accent w-100">
+              <i class="bi bi-play-circle me-2"></i>Convert to speech
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card border-0 bg-body-tertiary" data-aos="fade-up" data-aos-delay="100">
+        <div class="card-body p-4">
+          <h2 class="h6 mb-3">How it works</h2>
+          <ol class="ps-3 mb-0 small text-secondary">
+            <li class="mb-2">We use gTTS (Google Text‑to‑Speech) to generate speech.</li>
+            <li class="mb-2">Your text is converted to an MP3 file.</li>
+            <li class="mb-2">Download the MP3 instantly.</li>
+            <li>Supports multiple languages.</li>
+          </ol>
+        </div>
+      </div>
+      <div class="card border-0 bg-body-tertiary mt-3" data-aos="fade-up" data-aos-delay="150">
+        <div class="card-body p-4">
+          <h2 class="h6 mb-2">Use cases</h2>
+          <p class="small text-secondary mb-0">Create voice‑overs, narrate articles, generate audio for videos, or practice pronunciation.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .tool-icon-badge { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: var(--bs-primary-bg-subtle, rgba(13,110,253,.12)); color: var(--bs-primary); font-size: 1.4rem; }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ super() }}
+<script>
+(function () {
+  // --- Keyboard-accessible dropzones + visible "file selected" confirmation ---
+  document.querySelectorAll('.upload-dropzone[data-for]').forEach(function (zone) {
+    var input = document.getElementById(zone.getAttribute('data-for'));
+    if (!input) return;
+
+    zone.setAttribute('role', 'button');
+    zone.setAttribute('tabindex', '0');
+    if (!zone.hasAttribute('aria-label')) {
+      zone.setAttribute('aria-label', 'Upload ' + (input.name || 'file'));
+    }
+
+    zone.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        input.click();
+      }
+    });
+    zone.addEventListener('click', function (e) {
+      if (e.target.tagName !== 'INPUT') input.click();
+    });
+
+    ['dragenter', 'dragover'].forEach(function (evt) {
+      zone.addEventListener(evt, function (e) {
+        e.preventDefault();
+        zone.classList.add('dragover');
+      });
+    });
+    ['dragleave', 'drop'].forEach(function (evt) {
+      zone.addEventListener(evt, function (e) {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+      });
+    });
+    zone.addEventListener('drop', function (e) {
+      var files = e.dataTransfer.files;
+      if (files && files.length) {
+        input.files = files;
+        input.dispatchEvent(new Event('change'));
+      }
+    });
+
+    input.addEventListener('change', function () {
+      var label = zone.querySelector('.dz-filename');
+      if (input.files && input.files.length) {
+        if (!label) {
+          label = document.createElement('p');
+          label.className = 'dz-filename small fw-semibold text-accent mt-2 mb-0';
+          zone.appendChild(label);
+        }
+        var names = Array.from(input.files).map(function (f) { return f.name; }).join(', ');
+        label.textContent = '\u2713 ' + names;
+      } else if (label) {
+        label.remove();
+      }
+    });
+  });
+
+  // --- Submit button: disable + spinner instead of silently sitting there ---
+  document.querySelectorAll('form').forEach(function (form) {
+    form.addEventListener('submit', function () {
+      var btn = form.querySelector('button[type="submit"]');
+      if (btn && !btn.disabled) {
+        btn.dataset.originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.setAttribute('aria-busy', 'true');
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing\u2026';
+      }
+    });
+  });
+})();
+</script>
+{% endblock %}

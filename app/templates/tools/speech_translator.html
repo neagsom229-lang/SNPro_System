@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block title %}Speech Translator · SNPro{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+  <div class="d-flex align-items-center gap-3 mb-4" data-aos="fade-up">
+    <div class="tool-icon-badge">
+      <i class="bi bi-translate"></i>
+    </div>
+    <div>
+      <h1 class="h3 mb-1">Speech Translator</h1>
+      <p class="text-secondary mb-0">Upload spoken audio and get back natural-sounding speech in another language.</p>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card shadow-sm border-0" data-aos="fade-up" data-aos-delay="50">
+        <div class="card-body p-4">
+          <form id="speechTranslatorForm" method="POST" action="{{ url_for('tools.speech_translator') }}"
+                enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <label class="form-label fw-semibold">Audio file</label>
+            <div id="dropZone" class="upload-dropzone mb-2" role="button" tabindex="0" aria-label="Upload audio file">
+              <input type="file" id="audioFile" name="audio_file" class="d-none"
+                     accept=".mp3,.wav,.m4a,.ogg,.flac,.mp4" required>
+              <div id="dropZoneEmpty" class="text-center py-4">
+                <i class="bi bi-cloud-arrow-up fs-1 text-primary"></i>
+                <p class="mb-1 mt-2">Drag & drop an audio file here, or <span class="link-primary text-decoration-underline">browse</span></p>
+                <small class="text-secondary">MP3, WAV, M4A, OGG, FLAC, MP4 · up to 50 MB</small>
+              </div>
+              <div id="dropZoneFile" class="d-none align-items-center justify-content-between py-2 px-3">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-file-earmark-music fs-4 text-primary"></i>
+                  <div>
+                    <div id="fileName" class="fw-semibold"></div>
+                    <small id="fileSize" class="text-secondary"></small>
+                  </div>
+                </div>
+                <button type="button" id="removeFile" class="btn btn-sm btn-outline-danger">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+            </div>
+            <div id="uploadError" class="text-danger small mb-3 d-none"></div>
+
+            <div class="row g-3 mt-1">
+              <div class="col-md-6">
+                <label for="sourceLang" class="form-label fw-semibold">Spoken language</label>
+                <select id="sourceLang" name="source_lang" class="form-select">
+                  <option value="">Auto-detect</option>
+                  {% for code, name in languages.items() %}
+                  <option value="{{ code }}">{{ name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label for="targetLang" class="form-label fw-semibold">Translate to</label>
+                <select id="targetLang" name="target_lang" class="form-select" required>
+                  <option value="" disabled selected>Choose a language…</option>
+                  {% for code, name in languages.items() %}
+                  <option value="{{ code }}">{{ name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <div class="mt-4 d-flex align-items-center gap-3">
+              <button type="submit" id="submitBtn" class="btn btn-primary px-4">
+                <i class="bi bi-arrow-repeat me-1"></i> Translate speech
+              </button>
+              <div id="submitSpinner" class="spinner-border spinner-border-sm text-primary d-none" role="status"></div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card border-0 bg-body-tertiary" data-aos="fade-up" data-aos-delay="100">
+        <div class="card-body p-4">
+          <h2 class="h6 mb-3">How it works</h2>
+          <ol class="ps-3 mb-0 small text-secondary">
+            <li class="mb-2">Your audio is transcribed to text.</li>
+            <li class="mb-2">The text is translated into your chosen language.</li>
+            <li class="mb-2">Natural-sounding speech is generated from the translation.</li>
+            <li>You get an MP3 to preview and download.</li>
+          </ol>
+        </div>
+      </div>
+      <div class="card border-0 bg-body-tertiary mt-3" data-aos="fade-up" data-aos-delay="150">
+        <div class="card-body p-4">
+          <h2 class="h6 mb-2">Supported languages</h2>
+          <p class="small text-secondary mb-0">{{ languages.values() | join(', ') }}.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .tool-icon-badge { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: var(--bs-primary-bg-subtle, rgba(13,110,253,.12)); color: var(--bs-primary); font-size: 1.4rem; }
+  .upload-dropzone { border: 2px dashed var(--bs-border-color); border-radius: 12px; cursor: pointer; transition: border-color .15s ease, background-color .15s ease; padding: 2rem 1.25rem; text-align: center; }
+  .upload-dropzone.dragover { border-color: var(--bs-primary); background-color: var(--bs-primary-bg-subtle, rgba(13,110,253,.06)); }
+  .upload-dropzone input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ super() }}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const dropZone = document.getElementById("dropZone");
+  const fileInput = document.getElementById("audioFile");
+  const emptyState = document.getElementById("dropZoneEmpty");
+  const fileState = document.getElementById("dropZoneFile");
+  const fileNameEl = document.getElementById("fileName");
+  const fileSizeEl = document.getElementById("fileSize");
+  const removeBtn = document.getElementById("removeFile");
+  const errorEl = document.getElementById("uploadError");
+  const form = document.getElementById("speechTranslatorForm");
+  const submitBtn = document.getElementById("submitBtn");
+  const submitSpinner = document.getElementById("submitSpinner");
+
+  const ALLOWED_EXT = ["mp3", "wav", "m4a", "ogg", "flac", "mp4"];
+  const MAX_MB = 50;
+
+  function showFile(file) {
+    const ext = file.name.split(".").pop().toLowerCase();
+    if (!ALLOWED_EXT.includes(ext)) {
+      errorEl.textContent = "Unsupported file type. Please use MP3, WAV, M4A, OGG, FLAC, or MP4.";
+      errorEl.classList.remove("d-none");
+      return;
+    }
+    if (file.size / (1024 * 1024) > MAX_MB) {
+      errorEl.textContent = `File is too large. Max size is ${MAX_MB} MB.`;
+      errorEl.classList.remove("d-none");
+      return;
+    }
+    errorEl.classList.add("d-none");
+    fileNameEl.textContent = file.name;
+    fileSizeEl.textContent = (file.size / (1024 * 1024)).toFixed(1) + " MB";
+    emptyState.classList.add("d-none");
+    fileState.classList.remove("d-none");
+    fileState.classList.add("d-flex");
+  }
+
+  dropZone.addEventListener("click", (e) => {
+    if (e.target.closest("#removeFile")) return;
+    fileInput.click();
+  });
+
+  dropZone.addEventListener("keydown", (e) => {
+    if ((e.key === "Enter" || e.key === " ") && !e.target.closest("#removeFile")) {
+      e.preventDefault();
+      fileInput.click();
+    }
+  });
+
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files.length) showFile(fileInput.files[0]);
+  });
+
+  ["dragenter", "dragover"].forEach(evt =>
+    dropZone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      dropZone.classList.add("dragover");
+    })
+  );
+  ["dragleave", "drop"].forEach(evt =>
+    dropZone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("dragover");
+    })
+  );
+  dropZone.addEventListener("drop", (e) => {
+    const files = e.dataTransfer.files;
+    if (files.length) {
+      fileInput.files = files;
+      showFile(files[0]);
+    }
+  });
+
+  removeBtn.addEventListener("click", () => {
+    fileInput.value = "";
+    emptyState.classList.remove("d-none");
+    fileState.classList.add("d-none");
+    fileState.classList.remove("d-flex");
+  });
+
+  form.addEventListener("submit", () => {
+    if (!fileInput.files.length) return;
+    submitBtn.disabled = true;
+    submitSpinner.classList.remove("d-none");
+  });
+});
+</script>
+{% endblock %}

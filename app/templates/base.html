@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{{ theme | default('light') }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}SNPro — All-in-one media toolkit{% endblock %}</title>
+
+  <meta name="description" content="SNPro: thirteen professional AI-powered tools, one streamlined toolkit. Boost your workflow.">
+  <meta property="og:title" content="SNPro — Media Toolkit">
+  <meta property="og:description" content="The all-in-one platform for creators and professionals.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="{{ request.url }}">
+
+  <!-- Theme-aware mobile browser chrome: light/dark surface color, kept in
+       sync with the inline theme script below so there's no flash of the
+       wrong chrome color on load. -->
+  <meta name="theme-color" content="#f2ede3" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#10131c" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" sizes="any">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+
+  <!-- Applies the saved/preferred theme before first paint, so there's no
+       flash of the wrong theme while the stylesheet is still loading. -->
+  <script>
+    (function() {
+      const stored = localStorage.getItem('snpro-theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = stored || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.style.colorScheme = theme;
+    })();
+  </script>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<a href="#main-content" class="visually-hidden-focusable">Skip to main content</a>
+
+<!-- Slim top-of-page progress bar: gives form submissions and page
+     navigations a moment of visible feedback instead of the browser's own
+     (often invisible-on-fast-connections) loading indicator being the only
+     signal something is happening - a small but real "this feels responsive"
+     cue for a product with several multi-second upload/processing flows. -->
+<div id="routeProgress" class="route-progress" aria-hidden="true"></div>
+
+<div id="toastStack" class="toast-stack" role="alert" aria-live="polite" aria-atomic="true"></div>
+<div id="flashSource" hidden>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div data-flash data-category="{{ 'danger' if category == 'danger' else category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+</div>
+
+<nav class="navbar navbar-expand-lg navbar-snpro" aria-label="Main navigation">
+  <div class="container">
+    <a class="navbar-brand brand-mark" href="{{ url_for('main.index') }}">
+      <span class="dot" aria-hidden="true"></span>
+      SNPro
+      <span class="ai-chip" title="AI-powered toolkit">
+        <i class="bi bi-stars"></i> AI
+      </span>
+    </a>
+
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMain"
+            aria-controls="navMain" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navMain">
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+
+        <li class="nav-item w-100 w-lg-auto">
+          <form class="d-flex nav-search" role="search" action="{{ url_for('main.search', _external=False) }}" method="get">
+            <i class="bi bi-search nav-search-icon" aria-hidden="true"></i>
+            <input class="form-control form-control-sm" type="search" name="q" placeholder="Search tools…" aria-label="Search tools">
+          </form>
+        </li>
+
+        {% if current_user.is_authenticated %}
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('tools.history') }}">History</a></li>
+          {% if current_user.is_admin %}
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.dashboard') }}">Admin</a></li>
+          {% endif %}
+
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" id="userDropdown"
+     role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    <span class="avatar-placeholder rounded-circle bg-accent text-dark d-flex align-items-center justify-content-center"
+          style="width:28px;height:28px;font-weight:600;font-size:0.8rem;">
+      {{ current_user.username[:1] | upper }}
+    </span>
+    <span class="d-none d-lg-inline">{{ current_user.username }}</span>
+  </a>
+  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+    <li><a class="dropdown-item" href="{{ url_for('main.profile') }}"><i class="bi bi-person me-2"></i>Profile</a></li>
+    <li><a class="dropdown-item" href="{{ url_for('main.orders') }}"><i class="bi bi-box me-2"></i>Orders</a></li>
+    <li><a class="dropdown-item" href="{{ url_for('main.settings') }}"><i class="bi bi-gear me-2"></i>Settings</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right me-2"></i>Sign out</a></li>
+  </ul>
+</li>
+        {% else %}
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}">Sign in</a></li>
+          <li class="nav-item">
+            <a class="btn btn-accent btn-sm" href="{{ url_for('auth.register') }}">Create account</a>
+          </li>
+        {% endif %}
+
+        <li class="nav-item ms-lg-1">
+          <button id="themeToggle" class="theme-toggle" title="Toggle theme" type="button" aria-label="Toggle theme">
+            <i id="themeIcon" class="bi bi-moon-stars"></i>
+          </button>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<main class="container py-4" id="main-content" role="main">
+  {% block breadcrumb %}
+    <nav aria-label="Breadcrumb" class="mb-3 small">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+        {% block breadcrumb_items %}{% endblock %}
+      </ol>
+    </nav>
+  {% endblock %}
+
+  {% block content %}{% endblock %}
+
+  <div id="loadingSkeleton" class="d-none mt-4" aria-hidden="true">
+    <div class="skeleton-card card-snpro p-4" style="height:200px;"></div>
+  </div>
+</main>
+
+<!-- Back-to-top: only shown once the page has scrolled a bit (see script
+     below) - a small, expected affordance on longer pages like History or
+     the tool catalog, styled to match the theme-toggle button already
+     defined in style.css rather than introducing a new visual pattern. -->
+<button id="backToTop" class="theme-toggle back-to-top" type="button" aria-label="Back to top" hidden>
+  <i class="bi bi-arrow-up"></i>
+</button>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="row row-cols-1 row-cols-md-3 g-4 stagger">
+      <div class="col">
+        <h5 class="display-font">SNPro</h5>
+        <p class="text-dim">Thirteen AI-powered tools, one streamlined toolkit. Built for creators and professionals.</p>
+        <small class="text-dim d-block mt-2">
+          &copy; {{ now.year if now is defined else 2026 }} SNPro. All rights reserved.
+        </small>
+      </div>
+      <div class="col">
+        <h6 class="display-font">Links</h6>
+        <ul class="list-unstyled">
+          <li><a href="{{ url_for('main.about') }}">About</a></li>
+          <li><a href="{{ url_for('main.contact') }}">Contact</a></li>
+          <li><a href="{{ url_for('main.terms') }}">Terms</a></li>
+          <li><a href="{{ url_for('main.privacy') }}">Privacy</a></li>
+        </ul>
+      </div>
+      <div class="col">
+        <h6 class="display-font">Social</h6>
+        <div class="d-flex gap-3 fs-5">
+          <a href="#" aria-label="Twitter"><i class="bi bi-twitter"></i></a>
+          <a href="#" aria-label="GitHub"><i class="bi bi-github"></i></a>
+          <a href="#" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
+        </div>
+        <div class="mt-2">
+          <span class="status-pill success"><i class="bi bi-check-circle-fill"></i> All systems operational</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+<script src="{{ url_for('static', filename='js/toasts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dropzone.js') }}"></script>
+
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    AOS.init({
+      duration: 700,
+      once: true,
+      easing: 'ease-out-cubic'
+    });
+  });
+</script>
+
+<script>
+  (function() {
+    const flashSource = document.getElementById('flashSource');
+    if (flashSource) {
+      const flashes = flashSource.querySelectorAll('[data-flash]');
+      flashes.forEach(el => {
+        const category = el.dataset.category || 'info';
+        const message = el.textContent.trim();
+        if (message && window.showToast) {
+          window.showToast(message, category);
+        }
+      });
+    }
+  })();
+</script>
+
+<!-- Route-change progress bar: shows on any full-page form submission or
+     link navigation, hides itself automatically since a real page load
+     replaces the whole document anyway. Skips anchor links, new-tab
+     links, and links already handled by JS (data-no-progress) so it only
+     fires for actual navigations. -->
+<script>
+  (function() {
+    const bar = document.getElementById('routeProgress');
+    if (!bar) return;
+
+    function start() {
+      bar.style.transition = 'none';
+      bar.style.width = '0%';
+      bar.style.opacity = '1';
+      // Force reflow so the transition below actually animates from 0%.
+      void bar.offsetWidth;
+      bar.style.transition = 'width 8s cubic-bezier(0.16, 1, 0.3, 1)';
+      bar.style.width = '85%';
+    }
+
+    document.addEventListener('submit', function(e) {
+      const form = e.target;
+      if (form instanceof HTMLFormElement && !form.hasAttribute('data-no-progress')) {
+        start();
+      }
+    }, true);
+
+    document.addEventListener('click', function(e) {
+      const link = e.target.closest('a[href]');
+      if (!link || link.hasAttribute('data-no-progress') || link.target === '_blank') return;
+      const href = link.getAttribute('href');
+      if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey) return; // opening in new tab/window
+      start();
+    }, true);
+
+    window.addEventListener('pageshow', function() {
+      bar.style.transition = 'none';
+      bar.style.width = '0%';
+      bar.style.opacity = '0';
+    });
+  })();
+</script>
+
+<!-- Back-to-top visibility + smooth scroll -->
+<script>
+  (function() {
+    const btn = document.getElementById('backToTop');
+    if (!btn) return;
+
+    let ticking = false;
+    window.addEventListener('scroll', function() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(function() {
+        btn.hidden = window.scrollY < 480;
+        ticking = false;
+      });
+    });
+
+    btn.addEventListener('click', function() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  })();
+</script>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

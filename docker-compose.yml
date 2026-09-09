@@ -1,0 +1,66 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+  web:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    depends_on:
+      - redis
+    expose:
+      - "5000"
+    ports:
+      - "5000:5000"   # remove this once Caddy is fronting the site (see below)
+    volumes:
+      - ./instance:/app/instance
+      - ./storage:/app/storage
+
+  worker:
+    build: .
+    restart: unless-stopped
+    command: celery -A celery_worker.celery worker --loglevel=info --concurrency=2
+    env_file: .env
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    depends_on:
+      - redis
+    volumes:
+      - ./instance:/app/instance
+      - ./storage:/app/storage
+
+  # Automatic HTTPS reverse proxy. Point your domain's DNS A record at
+  # this server's public IP, set DOMAIN in .env, then run:
+  #   docker compose --profile https up -d --build
+  # Caddy handles the Let's Encrypt certificate and renewal on its own —
+  # no certbot, no manual cert files. Once this is up, phones/laptops
+  # anywhere can reach https://yourdomain.com directly.
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    profiles: ["https"]
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  redis_data:
+  caddy_data:
+  caddy_config:
