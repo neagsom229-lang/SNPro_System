@@ -5,6 +5,7 @@ from flask_migrate import Migrate
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from celery import Celery, shared_task
+import ssl
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -17,13 +18,19 @@ limiter = Limiter(key_func=get_remote_address)
 # Celery instance (configured by make_celery)
 celery = None
 
+
 def make_celery(app):
     global celery
+
+    broker_url = app.config["CELERY_BROKER_URL"]
+    backend_url = app.config["CELERY_RESULT_BACKEND"]
+
     celery = Celery(
         app.import_name,
-        broker=app.config["CELERY_BROKER_URL"],
-        backend=app.config["CELERY_RESULT_BACKEND"],
+        broker=broker_url,
+        backend=backend_url,
     )
+
     celery.conf.update(
         task_serializer="json",
         result_serializer="json",
@@ -41,7 +48,25 @@ def make_celery(app):
             "app.tools.tasks.task_images_to_video": {"queue": "heavy"},
             # all other tasks go to "light" queue (default)
         },
+        # --- Recommended: retry broker connection at startup instead of crashing ---
+        broker_connection_retry_on_startup=True,
     )
+
+    # --- FIX: Configure SSL if using TLS (rediss://) ---
+    # Upstash (and most cloud Redis providers) require TLS. Celery needs explicit
+    # SSL options when the URL starts with "rediss://", otherwise it raises:
+    #   ValueError: A rediss:// URL must have parameter ssl_cert_reqs ...
+    #
+    # IMPORTANT: Use the ssl.CERT_NONE constant (an integer), NOT the string
+    # "CERT_NONE". The redis-py library expects the integer constant.
+    if isinstance(broker_url, str) and broker_url.startswith("rediss://"):
+        celery.conf.broker_use_ssl = {
+            "ssl_cert_reqs": ssl.CERT_NONE,
+        }
+    if isinstance(backend_url, str) and backend_url.startswith("rediss://"):
+        celery.conf.redis_backend_use_ssl = {
+            "ssl_cert_reqs": ssl.CERT_NONE,
+        }
 
     class ContextTask(celery.Task):
         def __call__(self, *args, **kwargs):
