@@ -6,7 +6,8 @@
   <p class="text-body-secondary mb-4">Your files stay private to your account.</p>
 
   <form method="post" novalidate>
-    
+    {{ form.hidden_tag() }}
+
     <div class="mb-3">
       {{ form.username.label(class_="form-label") }}
       {{ form.username(class_="form-control", placeholder="jane_doe") }}
