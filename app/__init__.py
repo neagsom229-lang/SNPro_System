@@ -26,7 +26,8 @@ def create_app(config_class=Config):
     limiter.init_app(app)
     make_celery(app)  # Celery must be configured before importing tasks (blueprints)
 
-    from models import User, Job  # noqa: F401  (import all models so create_all sees them)
+    # Import all models so SQLAlchemy knows about them
+    from models import User, Job  # noqa: F401
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -44,20 +45,47 @@ def create_app(config_class=Config):
     app.register_blueprint(admin_bp)
 
     # =============== DATABASE INITIALIZATION ===============
-    # On platforms like Render (ephemeral disk, no `flask db upgrade` run),
-    # the tables may not exist yet. We safely create them if missing.
-    # This does NOT conflict with Flask-Migrate: create_all() only creates
-    # tables that don't exist and leaves alembic_version alone.
+    # Multiple Gunicorn workers may start at the same time. When they all
+    # call create_all() concurrently, one wins and the others raise
+    # "table already exists". Catch that and continue.
     with app.app_context():
         from sqlalchemy import inspect
-        inspector = inspect(db.engine)
-        if not inspector.has_table("users"):
-            db.create_all()
-            app.logger.info("Database tables created successfully.")
-        else:
-            app.logger.info("Database tables already exist.")
+        from sqlalchemy.exc import OperationalError
 
-    # Context processors
+        try:
+            inspector = inspect(db.engine)
+            if not inspector.has_table("users"):
+                db.create_all()
+                app.logger.info("Database tables created successfully.")
+            else:
+                app.logger.info("Database tables already exist.")
+        except OperationalError as e:
+            if "already exists" in str(e).lower():
+                app.logger.info("Tables already created by another worker; continuing.")
+            else:
+                raise
+
+    # =============== ADMIN BOOTSTRAP ===============
+    # Promotes the user whose username matches ADMIN_USERNAME (if set).
+    # Runs on every startup; safe because it only sets is_admin=True.
+    admin_username = os.environ.get("ADMIN_USERNAME", "").strip()
+    if admin_username:
+        with app.app_context():
+            try:
+                user = User.query.filter_by(username=admin_username).first()
+                if user and not user.is_admin:
+                    user.is_admin = True
+                    db.session.commit()
+                    app.logger.info(f"Promoted {admin_username} to admin.")
+                elif user:
+                    app.logger.info(f"{admin_username} is already admin.")
+                else:
+                    app.logger.info(f"ADMIN_USERNAME='{admin_username}' not found yet.")
+            except Exception as e:
+                # Table may not exist yet during a race; safe to skip this pass.
+                app.logger.warning(f"Admin bootstrap skipped: {e}")
+
+    # =============== CONTEXT PROCESSORS ===============
     @app.context_processor
     def inject_globals():
         from flask_login import current_user
@@ -67,6 +95,7 @@ def create_app(config_class=Config):
     def inject_now():
         return {"now": datetime.now(timezone.utc)}
 
+    # =============== CLI COMMANDS ===============
     @app.cli.command("make-admin")
     @click.argument("username")
     def make_admin_command(username):
@@ -85,8 +114,11 @@ def create_app(config_class=Config):
         from logging.handlers import RotatingFileHandler
         log_dir = os.path.join(BASE_DIR, "logs")
         os.makedirs(log_dir, exist_ok=True)
-        handler = RotatingFileHandler(os.path.join(log_dir, "snpro.log"),
-                                      maxBytes=10 * 1024 * 1024, backupCount=5)
+        handler = RotatingFileHandler(
+            os.path.join(log_dir, "snpro.log"),
+            maxBytes=10 * 1024 * 1024,
+            backupCount=5,
+        )
         handler.setLevel(logging.INFO)
         formatter = logging.Formatter(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -94,22 +126,5 @@ def create_app(config_class=Config):
         handler.setFormatter(formatter)
         app.logger.addHandler(handler)
         app.logger.setLevel(logging.INFO)
-
-            # =============== ADMIN BOOTSTRAP ===============
-    # Promotes the user whose username matches ADMIN_USERNAME (if set).
-    # Runs on every startup; safe because it only sets is_admin=True.
-    admin_username = os.environ.get("ADMIN_USERNAME", "").strip()
-    if admin_username:
-        with app.app_context():
-            from models import User
-            user = User.query.filter_by(username=admin_username).first()
-            if user and not user.is_admin:
-                user.is_admin = True
-                db.session.commit()
-                app.logger.info(f"Promoted {admin_username} to admin.")
-            elif user:
-                app.logger.info(f"{admin_username} is already admin.")
-            else:
-                app.logger.info(f"ADMIN_USERNAME='{admin_username}' not found yet.")
 
     return app
