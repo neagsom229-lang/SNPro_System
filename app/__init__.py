@@ -6,6 +6,7 @@ from extensions import db, login_manager, csrf, migrate, limiter, make_celery
 from datetime import datetime, timezone
 import click
 
+
 def create_app(config_class=Config):
     app = Flask(__name__, static_folder="static", template_folder="templates")
     app.config.from_object(config_class)
@@ -25,7 +26,7 @@ def create_app(config_class=Config):
     limiter.init_app(app)
     make_celery(app)  # Celery must be configured before importing tasks (blueprints)
 
-    from models import User
+    from models import User, Job  # noqa: F401  (import all models so create_all sees them)
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -43,10 +44,18 @@ def create_app(config_class=Config):
     app.register_blueprint(admin_bp)
 
     # =============== DATABASE INITIALIZATION ===============
-    # DO NOT use db.create_all() – it conflicts with Flask-Migrate.
-    # Use `flask db upgrade` to apply migrations (this creates tables too).
-    # For local dev, run: flask db init  (once), then flask db migrate, then flask db upgrade.
-    # This avoids silent schema mismatches between models and migrations.
+    # On platforms like Render (ephemeral disk, no `flask db upgrade` run),
+    # the tables may not exist yet. We safely create them if missing.
+    # This does NOT conflict with Flask-Migrate: create_all() only creates
+    # tables that don't exist and leaves alembic_version alone.
+    with app.app_context():
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        if not inspector.has_table("users"):
+            db.create_all()
+            app.logger.info("Database tables created successfully.")
+        else:
+            app.logger.info("Database tables already exist.")
 
     # Context processors
     @app.context_processor
@@ -56,7 +65,6 @@ def create_app(config_class=Config):
 
     @app.context_processor
     def inject_now():
-        # Use UTC consistently with Celery and DB timestamps
         return {"now": datetime.now(timezone.utc)}
 
     @app.cli.command("make-admin")
@@ -78,7 +86,7 @@ def create_app(config_class=Config):
         log_dir = os.path.join(BASE_DIR, "logs")
         os.makedirs(log_dir, exist_ok=True)
         handler = RotatingFileHandler(os.path.join(log_dir, "snpro.log"),
-                                      maxBytes=10*1024*1024, backupCount=5)
+                                      maxBytes=10 * 1024 * 1024, backupCount=5)
         handler.setLevel(logging.INFO)
         formatter = logging.Formatter(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -86,9 +94,5 @@ def create_app(config_class=Config):
         handler.setFormatter(formatter)
         app.logger.addHandler(handler)
         app.logger.setLevel(logging.INFO)
-
-    # =============== (Optional) Custom error pages ===============
-    # You can add a separate errors blueprint later for branded 404/500 pages.
-    # For now, the fallback is Flask's default.
 
     return app
