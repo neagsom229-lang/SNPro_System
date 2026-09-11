@@ -95,4 +95,21 @@ def create_app(config_class=Config):
         app.logger.addHandler(handler)
         app.logger.setLevel(logging.INFO)
 
+            # =============== ADMIN BOOTSTRAP ===============
+    # Promotes the user whose username matches ADMIN_USERNAME (if set).
+    # Runs on every startup; safe because it only sets is_admin=True.
+    admin_username = os.environ.get("ADMIN_USERNAME", "").strip()
+    if admin_username:
+        with app.app_context():
+            from models import User
+            user = User.query.filter_by(username=admin_username).first()
+            if user and not user.is_admin:
+                user.is_admin = True
+                db.session.commit()
+                app.logger.info(f"Promoted {admin_username} to admin.")
+            elif user:
+                app.logger.info(f"{admin_username} is already admin.")
+            else:
+                app.logger.info(f"ADMIN_USERNAME='{admin_username}' not found yet.")
+
     return app
