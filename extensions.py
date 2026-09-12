@@ -42,6 +42,7 @@ def make_celery(app):
         task_acks_late=True,
         worker_max_tasks_per_child=50,
         worker_prefetch_multiplier=1,          # <-- prevents queue starvation
+        task_default_queue="light", 
         task_routes={
             "app.tools.tasks.task_auto_edit_video": {"queue": "heavy"},
             "app.tools.tasks.task_enhance_video": {"queue": "heavy"},
