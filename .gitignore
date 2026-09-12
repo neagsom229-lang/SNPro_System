@@ -1,9 +1,11 @@
+venv/
 __pycache__/
 *.pyc
-.env
 instance/
+.env
+*.sqlite3
+logs/
 storage/
-venv/
-.venv/
-*.egg-info/
+storage_exports/
+*.log
 .DS_Store

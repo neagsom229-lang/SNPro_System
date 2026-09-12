@@ -15,6 +15,4 @@ COPY . .
 
 RUN mkdir -p instance storage
 
-EXPOSE 5000
-
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "-w", "3", "--timeout", "300", "run:app"]
+CMD ["sh", "-c", "gunicorn run:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120"]
