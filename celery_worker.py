@@ -1,16 +1,14 @@
 """
-Celery worker entrypoint.
+Entrypoint for the Celery CLI (`celery -A celery_worker.celery worker ...`).
 
-Run with:
-    celery -A celery_worker.celery worker --loglevel=info -P solo   (Windows)
-    celery -A celery_worker.celery worker --loglevel=info           (Linux/macOS)
+Celery's CLI just does a plain import — it won't call your Flask app
+factory on its own. Importing this module runs create_app(), which
+(per app/__init__.py) calls make_celery(app) and populates the
+`celery` global in extensions.py before we re-export it here.
 """
 from app import create_app
-
-# Create the Flask app – this calls make_celery() and configures the global celery
-flask_app = create_app()
-flask_app.app_context().push()
-
-# Now import the configured celery instance and register tasks
 from extensions import celery
-from app.tools import tasks  # noqa: F401, E402
+
+# Creating the app has the side effect of configuring `celery`
+# (broker/backend URLs, task_routes, SSL options, etc.) via make_celery().
+flask_app = create_app()
