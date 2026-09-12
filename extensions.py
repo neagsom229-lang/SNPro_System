@@ -57,15 +57,21 @@ def make_celery(app):
     # SSL options when the URL starts with "rediss://", otherwise it raises:
     #   ValueError: A rediss:// URL must have parameter ssl_cert_reqs ...
     #
-    # IMPORTANT: Use the ssl.CERT_NONE constant (an integer), NOT the string
-    # "CERT_NONE". The redis-py library expects the integer constant.
+    # IMPORTANT: Use the ssl.CERT_REQUIRED constant (an integer), NOT the string
+    # "CERT_REQUIRED". The redis-py library expects the integer constant.
+    #
+    # CERT_REQUIRED (not CERT_NONE) is correct here because Upstash is a public,
+    # properly CA-signed TLS endpoint reached over the open internet — skipping
+    # verification would accept any certificate, including a spoofed one from a
+    # man-in-the-middle. CERT_NONE is only reasonable for a private/internal
+    # Redis you fully control on a trusted network (e.g. Render-internal Redis).
     if isinstance(broker_url, str) and broker_url.startswith("rediss://"):
         celery.conf.broker_use_ssl = {
-            "ssl_cert_reqs": ssl.CERT_NONE,
+            "ssl_cert_reqs": ssl.CERT_REQUIRED,
         }
     if isinstance(backend_url, str) and backend_url.startswith("rediss://"):
         celery.conf.redis_backend_use_ssl = {
-            "ssl_cert_reqs": ssl.CERT_NONE,
+            "ssl_cert_reqs": ssl.CERT_REQUIRED,
         }
 
     class ContextTask(celery.Task):

@@ -270,3 +270,12 @@ def dashboard():
     return render_template(
         "main/dashboard.html", tools=TOOLS, jobs=recent_jobs, stats=stats
     )
+
+@main_bp.route("/_debug/redis-url")
+def _debug_redis_url():
+    import os, re
+    broker = os.environ.get("CELERY_BROKER_URL", "NOT SET")
+    backend = os.environ.get("CELERY_RESULT_BACKEND", "NOT SET")
+    masked_broker = re.sub(r':[^@]+@', ':***@', broker)
+    masked_backend = re.sub(r':[^@]+@', ':***@', backend)
+    return f"<pre>BROKER: {masked_broker}\nBACKEND: {masked_backend}</pre>"
